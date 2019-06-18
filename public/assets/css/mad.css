@@ -1,0 +1,11 @@
+.header-top {
+    max-height: 80px;
+}
+
+.top-user-area .top-user-area-list {
+    top: 10px;
+}
+
+.booking-filters {
+    background-image: linear-gradient(to bottom, #124382, #193275);
+}
