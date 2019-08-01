@@ -1,5 +1,6 @@
 package com.naijatravelshop.persistence.model.portal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.naijatravelshop.persistence.model.enums.Gender;
 import com.naijatravelshop.persistence.model.generic.AuditModel;
 
@@ -21,6 +22,7 @@ public class PortalUser extends AuditModel implements Serializable {
     private String firstName;
     private String lastName;
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
     @Column(nullable = false)
     private boolean passwordReset = false;

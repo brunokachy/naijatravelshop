@@ -68,11 +68,11 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.projectlombok</groupId>-->
-            <!--<artifactId>lombok</artifactId>-->
-            <!--<optional>true</optional>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -96,12 +96,17 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
-            <version>0.9.0</version>
+            <version>0.9.1</version>
         </dependency>
         <dependency>
             <groupId>com.mashape.unirest</groupId>
             <artifactId>unirest-java</artifactId>
             <version>1.4.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8.1</version>
         </dependency>
     </dependencies>
 
@@ -112,24 +117,24 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
             <!--<plugin>-->
-                <!--<artifactId>maven-resources-plugin</artifactId>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>copy-resources</id>-->
-                        <!--<phase>validate</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>copy-resources</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<outputDirectory>/static/</outputDirectory>-->
-                            <!--<resources>-->
-                                <!--<resource>-->
-                                    <!--<directory>C:\Dev\naijatravelshop-app\dist\naijatravelshop-app</directory>-->
-                                <!--</resource>-->
-                            <!--</resources>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
+            <!--<artifactId>maven-resources-plugin</artifactId>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>copy-resources</id>-->
+            <!--<phase>validate</phase>-->
+            <!--<goals>-->
+            <!--<goal>copy-resources</goal>-->
+            <!--</goals>-->
+            <!--<configuration>-->
+            <!--<outputDirectory>/static/</outputDirectory>-->
+            <!--<resources>-->
+            <!--<resource>-->
+            <!--<directory>C:\Dev\naijatravelshop-app\dist\naijatravelshop-app</directory>-->
+            <!--</resource>-->
+            <!--</resources>-->
+            <!--</configuration>-->
+            <!--</execution>-->
+            <!--</executions>-->
             <!--</plugin>-->
         </plugins>
     </build>

@@ -4,24 +4,24 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.naijatravelshop.persistence.model.enums.EntityStatus;
-import com.naijatravelshop.persistence.model.enums.PaymentChannel;
-import com.naijatravelshop.persistence.model.enums.PaymentProvider;
-import com.naijatravelshop.persistence.model.enums.ProcessStatus;
+import com.naijatravelshop.persistence.model.crm.ServiceRequest;
+import com.naijatravelshop.persistence.model.enums.*;
 import com.naijatravelshop.persistence.model.payment.PaymentHistory;
 import com.naijatravelshop.persistence.model.portal.Reservation;
 import com.naijatravelshop.persistence.model.portal.ReservationOwner;
 import com.naijatravelshop.persistence.model.portal.Setting;
+import com.naijatravelshop.persistence.repository.crm.ServiceRequestRepository;
 import com.naijatravelshop.persistence.repository.payment.PaymentHistoryRepository;
 import com.naijatravelshop.persistence.repository.portal.ReservationOwnerRepository;
 import com.naijatravelshop.persistence.repository.portal.ReservationRepository;
 import com.naijatravelshop.persistence.repository.portal.SettingRepository;
-import com.naijatravelshop.service.flight.service.impl.FlightServiceImpl;
+import com.naijatravelshop.service.payment.pojo.Request.BankPaymentDTO;
 import com.naijatravelshop.service.payment.pojo.Request.FlwPaymentVerificationDTO;
 import com.naijatravelshop.service.payment.pojo.Response.FlwAccountDetail;
 import com.naijatravelshop.service.payment.service.PaymentService;
 import com.naijatravelshop.web.constants.ProjectConstant;
 import com.naijatravelshop.web.exceptions.BadRequestException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,6 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
     private ReservationOwnerRepository reservationOwnerRepository;
     private PaymentHistoryRepository paymentHistoryRepository;
     private SettingRepository settingRepository;
+    private ServiceRequestRepository serviceRequestRepository;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
@@ -57,11 +58,13 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentServiceImpl(ReservationRepository reservationRepository,
                               ReservationOwnerRepository reservationOwnerRepository,
                               PaymentHistoryRepository paymentHistoryRepository,
-                              SettingRepository settingRepository) {
+                              SettingRepository settingRepository,
+                              ServiceRequestRepository serviceRequestRepository) {
         this.reservationRepository = reservationRepository;
         this.reservationOwnerRepository = reservationOwnerRepository;
         this.paymentHistoryRepository = paymentHistoryRepository;
         this.settingRepository = settingRepository;
+        this.serviceRequestRepository = serviceRequestRepository;
     }
 
     @Override
@@ -153,10 +156,57 @@ public class PaymentServiceImpl implements PaymentService {
                 paymentHistory.setTransactionId(flwPaymentVerificationDTO.getFlwRef());
                 paymentHistory.setReservation(r);
                 paymentHistoryRepository.save(paymentHistory);
+
+                Optional<ServiceRequest> optionalServiceRequest = serviceRequestRepository.findByReservation(r);
+                if (optionalServiceRequest.isPresent()) {
+                    ServiceRequest serviceRequest = optionalServiceRequest.get();
+                    serviceRequest.setName(ServiceQueueName.FIGHT_WEB_PAYMENT);
+                    serviceRequestRepository.save(serviceRequest);
+                }
+
+
             }
             // now you can give value for payment.
         } catch (UnirestException ex) {
             throw new BadRequestException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void bankPayment(BankPaymentDTO bankPaymentDTO) {
+        Optional<Reservation> reservationOptional = reservationRepository
+                .findFirstByBookingNumberEquals(bankPaymentDTO.getBookingNumber());
+        if (reservationOptional.isPresent()) {
+            Timestamp currentTime = new Timestamp(new Date().getTime());
+            Reservation reservation = reservationOptional.get();
+            reservation.setActualAmountInKobo(reservation.getSellingPrice());
+            reservation.setLastUpdated(currentTime);
+            reservationRepository.save(reservation);
+
+            Optional<ReservationOwner> ownerOptional = reservationOwnerRepository.findById(reservation.getReservationOwner().getId());
+
+            PaymentHistory paymentHistory = new PaymentHistory();
+            paymentHistory.setAmountInKobo(reservation.getActualAmountInKobo());
+            paymentHistory.setAmountActualPaidInKobo(reservation.getActualAmountInKobo());
+            paymentHistory.setStatus(EntityStatus.ACTIVE);
+            paymentHistory.setPaymentStatus(ProcessStatus.PENDING);
+            paymentHistory.setPayerEmail(ownerOptional.get().getEmail());
+            paymentHistory.setPayerName(ownerOptional.get().getFirstName() + " " + ownerOptional.get().getLastName());
+            paymentHistory.setPayerPhone(ownerOptional.get().getPhoneNumber());
+            paymentHistory.setPaymentReference(RandomStringUtils.randomAlphabetic(6));
+            paymentHistory.setPaymentChannel(PaymentChannel.BANK_PAYMENT);
+            paymentHistory.setPaymentProvider(PaymentProvider.BANK);
+            paymentHistory.setTransactionId(paymentHistory.getPaymentReference());
+            paymentHistory.setReservation(reservation);
+            paymentHistoryRepository.save(paymentHistory);
+
+            Optional<ServiceRequest> optionalServiceRequest = serviceRequestRepository.findByReservation(reservation);
+            if (optionalServiceRequest.isPresent()) {
+                ServiceRequest serviceRequest = optionalServiceRequest.get();
+                serviceRequest.setName(ServiceQueueName.FLIGHT_PENDING_PAYMENT);
+                serviceRequestRepository.save(serviceRequest);
+            }
+
         }
     }
 

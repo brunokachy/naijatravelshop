@@ -3,11 +3,12 @@ package com.naijatravelshop.web.configs;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Created by jnwanya on
- * Wed, 27 Mar, 2019
+ * Created by Bruno on
+ * 22/05/2019
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -27,5 +28,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedOrigins("*")
                 .allowedHeaders("*");
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/{spring:\\w+}").setViewName("forward:/");
+        registry.addViewController("/**/{spring:\\w+}").setViewName("forward:/");
+        registry.addViewController("/{spring:\\w+}/**{spring:?!(\\.js|\\.css)$}")
+                .setViewName("forward:/");
     }
 }

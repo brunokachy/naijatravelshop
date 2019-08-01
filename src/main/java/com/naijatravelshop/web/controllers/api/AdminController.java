@@ -1,9 +1,9 @@
 package com.naijatravelshop.web.controllers.api;
 
+import com.naijatravelshop.service.portal.pojo.request.BookingSearchDTO;
 import com.naijatravelshop.service.portal.pojo.request.PasswordDTO;
 import com.naijatravelshop.service.portal.pojo.request.UserDTO;
-import com.naijatravelshop.service.portal.pojo.response.AffiliateAccountDetail;
-import com.naijatravelshop.service.portal.pojo.response.UserResponse;
+import com.naijatravelshop.service.portal.pojo.response.*;
 import com.naijatravelshop.service.portal.service.PortalService;
 import com.naijatravelshop.web.pojo.ApiResponse;
 import io.swagger.annotations.ApiOperation;
@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Created by Bruno on
@@ -133,4 +135,80 @@ public class AdminController {
         apiResponse.setData(baseUrl);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
     }
+
+    @ApiOperation(value = "Fetch recent bookings")
+    @GetMapping(value = {"/get_recent_booking"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<List<RecentBookingResponse>>> getRecentBooking() {
+        ApiResponse<List<RecentBookingResponse>> apiResponse = new ApiResponse<>();
+        List<RecentBookingResponse> recentBookings = portalService.getRecentBooking();
+        apiResponse.setMessage("Recent booking retrieved successfully");
+        apiResponse.setData(recentBookings);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Fetch flight bookings by search term")
+    @PostMapping(value = {"/get_flight_bookings_by_search_term"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<List<RecentBookingResponse>>> getFlightBookingBySearchTerm(@RequestBody BookingSearchDTO bookingSearchDTO) {
+        ApiResponse<List<RecentBookingResponse>> apiResponse = new ApiResponse<>();
+        List<RecentBookingResponse> recentBookings = portalService.getFlightBookingBySearchTerm(bookingSearchDTO);
+        apiResponse.setMessage("Bookings retrieved successfully");
+        apiResponse.setData(recentBookings);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Change Booking Status")
+    @PostMapping(value = {"/change_booking_status"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<RecentBookingResponse>> changeBookingStatus(@RequestBody BookingSearchDTO bookingSearchDTO) {
+        ApiResponse<RecentBookingResponse> apiResponse = new ApiResponse<>();
+        RecentBookingResponse changeBookingStatus = portalService.changeBookingStatus(bookingSearchDTO);
+        apiResponse.setMessage("Reservation status of booking (" + bookingSearchDTO.getBookingNo() + ") changed successfully");
+        apiResponse.setData(changeBookingStatus);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Get Reservation Details")
+    @PostMapping(value = {"/get_flight_reservation_details"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<FlightReservationResponse>> getFlightReservationDetails(@RequestBody BookingSearchDTO bookingSearchDTO) {
+        ApiResponse<FlightReservationResponse> apiResponse = new ApiResponse<>();
+        FlightReservationResponse flightReservationResponse = portalService.getFlightBookingDetails(bookingSearchDTO.getBookingNo());
+        apiResponse.setMessage("Reservation details retrieved successfully");
+        apiResponse.setData(flightReservationResponse);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Fetch visa requests by search term")
+    @PostMapping(value = {"/get_visa_requests_by_search_term"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<List<VisaResponse>>> getVisaRequestBySearchTerm(@RequestBody BookingSearchDTO bookingSearchDTO) {
+        ApiResponse<List<VisaResponse>> apiResponse = new ApiResponse<>();
+        List<VisaResponse> visaRequests = portalService.getVisaRequestsBySearchTerm(bookingSearchDTO);
+        apiResponse.setMessage("Visa Requests retrieved successfully");
+        apiResponse.setData(visaRequests);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Change Visa Request Status")
+    @PostMapping(value = {"/change_visa_request_status"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<VisaResponse>> changeVisaRequestStatus(@RequestBody BookingSearchDTO bookingSearchDTO) {
+        ApiResponse<VisaResponse> apiResponse = new ApiResponse<>();
+        VisaResponse changeVisaRequestStatus = portalService.changeVisaRequestStatus(bookingSearchDTO);
+        apiResponse.setMessage("Visa request status changed successfully");
+        apiResponse.setData(changeVisaRequestStatus);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Fetch Portal Users")
+    @GetMapping(value = {"/get_portal_users"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getPortalUsers() {
+        ApiResponse<List<UserResponse>> apiResponse = new ApiResponse<>();
+        List<UserResponse> userResponses = portalService.getPortalUsers();
+        apiResponse.setMessage("Portal users retrieved successfully");
+        apiResponse.setData(userResponses);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
 }

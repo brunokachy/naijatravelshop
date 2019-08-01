@@ -1,5 +1,6 @@
 package com.naijatravelshop.web.controllers.api;
 
+import com.naijatravelshop.service.payment.pojo.Request.BankPaymentDTO;
 import com.naijatravelshop.service.payment.pojo.Request.FlwPaymentVerificationDTO;
 import com.naijatravelshop.service.payment.pojo.Response.FlwAccountDetail;
 import com.naijatravelshop.service.payment.service.PaymentService;
@@ -36,6 +37,18 @@ public class PaymentController {
         ApiResponse<String> apiResponse = new ApiResponse<>();
         paymentService.verifyFlwPayment(flwPaymentVerificationDTO);
         apiResponse.setMessage("Payment Verification was successful");
+        apiResponse.setData("Success");
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Bank Payment")
+    @PostMapping(value = {"/bank_payment"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<String>> bankPayment(@RequestBody BankPaymentDTO bankPaymentDTO) {
+        log.info("BANK PAYMENT: {}", bankPaymentDTO.toString());
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        paymentService.bankPayment(bankPaymentDTO);
+        apiResponse.setMessage("Payment details saved successfully");
         apiResponse.setData("Success");
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
     }

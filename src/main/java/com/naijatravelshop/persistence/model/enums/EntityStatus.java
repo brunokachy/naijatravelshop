@@ -6,11 +6,12 @@ public enum EntityStatus {
     DELETED("DELETED"),
     INACTIVE("INACTIVE"),
     PENDING("PENDING"),
+    CLOSED("CLOSED"),
     DEACTIVATED("DEACTIVATED");
 
     private final String value;
 
-    private EntityStatus(String value) {
+    EntityStatus(String value) {
         this.value = value;
     }
 

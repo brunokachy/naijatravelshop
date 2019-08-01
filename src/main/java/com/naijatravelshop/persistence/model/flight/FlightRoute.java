@@ -28,6 +28,7 @@ public class FlightRoute implements Serializable {
     private String operatingAirlineCode;
     private String airlineName;
     private String flightDuration;
+    private String bookingClass;
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
@@ -152,5 +153,13 @@ public class FlightRoute implements Serializable {
 
     public void setFlightDuration(String flightDuration) {
         this.flightDuration = flightDuration;
+    }
+
+    public String getBookingClass() {
+        return bookingClass;
+    }
+
+    public void setBookingClass(String bookingClass) {
+        this.bookingClass = bookingClass;
     }
 }

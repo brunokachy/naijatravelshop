@@ -4,6 +4,8 @@ public enum ReservationType {
     FLIGHT("FLIGHT"),
     HOTEL("HOTEL"),
     ACTIVITY("ACTIVITY"),
+    INBOUND_CALL("INBOUND CALL"),
+    VISA("VISA"),
     TRANSFER("TRANSFER");
 
     private final String value;

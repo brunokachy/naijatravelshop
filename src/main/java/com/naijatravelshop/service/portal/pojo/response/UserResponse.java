@@ -14,6 +14,7 @@ public class UserResponse {
     private Long id;
     private List<String> roles;
     private boolean passwordReset;
+    private boolean active;
 
     public String getFirstName() {
         return firstName;
@@ -69,5 +70,13 @@ public class UserResponse {
 
     public void setPasswordReset(boolean passwordReset) {
         this.passwordReset = passwordReset;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

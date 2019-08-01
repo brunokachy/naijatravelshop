@@ -295,8 +295,7 @@
 
                      </tr>
                   </table>
-                  <#list itinerary as flightDetail>
-                  <table cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
+                  <table th:each="flightDetail: ${itinerary}" cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
                      <tr>
                         <td align="left" valign="top">
                            <!--[if (gte mso 9)|(IE)]>
@@ -334,7 +333,7 @@
                                     <td align="left" valign="top">
                                        <div style="height: 12px; line-height: 12px; font-size: 10px;">&nbsp;</div>
                                        <font face="'Source Sans Pro', sans-serif" color="#000000" style="font-size: 15px; line-height: 20px;">
-                                          <span style="font-family: 'Source Sans Pro', Arial, Tahoma, Geneva, sans-serif; color: #000000;  font-size: 15px; line-height: 18px;"><span th:text="${#dates.format(flightDetail.departureTime, 'dd MMMM YYYY, h:mm a')} TO ${#dates.format(flightDetail.arrivalTime, 'dd MMMM YYYY, h:mm a')}"></span></span>
+                                          <span style="font-family: 'Source Sans Pro', Arial, Tahoma, Geneva, sans-serif; color: #000000;  font-size: 15px; line-height: 18px;"><span th:text="${#dates.format(flightDetail.departureTime, 'dd MMMM YYYY, h:mm a')}"></span> TO <span th:text="${#dates.format(flightDetail.arrivalTime, 'dd MMMM YYYY, h:mm a')}"></span></span>
                                        </font>
                                        <div style="height: 5px; line-height: 5px; font-size: 5px;">&nbsp;</div>
                                     </td>
@@ -345,10 +344,8 @@
                            </td></tr>
                            </table><![endif]-->
                         </td>
-
                      </tr>
                   </table>
-               </#list>
 
                <table cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
                   <tr>
@@ -411,8 +408,7 @@
                   </tr>
                </table>
 
-               <#list travellers as travellerDetail>
-               <table cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
+               <table th:each="travellerDetail: ${travellers}" cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
                   <tr>
                      <td align="left" valign="top">
                         <!--[if (gte mso 9)|(IE)]>
@@ -424,7 +420,7 @@
                                  <td align="left" valign="top">
                                     <div style="height: 12px; line-height: 12px; font-size: 10px;">&nbsp;</div>
                                     <font face="'Source Sans Pro', sans-serif" color="#000000" style="font-size: 15px; line-height: 20px;">
-                                       <span style="font-family: 'Source Sans Pro', Arial, Tahoma, Geneva, sans-serif; color: #000000;  font-size: 15px; line-height: 18px;"><span th:text="${travellerDetail.firstName} ${travellerDetail.lastName}"></span></span>
+                                       <span style="font-family: 'Source Sans Pro', Arial, Tahoma, Geneva, sans-serif; color: #000000;  font-size: 15px; line-height: 18px;"><span th:text="${travellerDetail.firstName}"></span> <span th:text="${travellerDetail.lastName}"></span></span>
                                     </font>
                                     <div style="height: 5px; line-height: 5px; font-size: 5px;">&nbsp;</div>
                                  </td>
@@ -464,7 +460,6 @@
 
                   </tr>
                </table>
-            </#list>
 
             <table cellpadding="0" cellspacing="0" border="0" width="88%" style="width: 88% !important; min-width: 88%; max-width: 88%;">
                <tr>

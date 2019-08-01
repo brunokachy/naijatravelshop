@@ -1,9 +1,11 @@
 package com.naijatravelshop.service.portal.service;
 
+import com.naijatravelshop.service.portal.pojo.request.BookingSearchDTO;
 import com.naijatravelshop.service.portal.pojo.request.PasswordDTO;
 import com.naijatravelshop.service.portal.pojo.request.UserDTO;
-import com.naijatravelshop.service.portal.pojo.response.AffiliateAccountDetail;
-import com.naijatravelshop.service.portal.pojo.response.UserResponse;
+import com.naijatravelshop.service.portal.pojo.response.*;
+
+import java.util.List;
 
 public interface PortalService {
 
@@ -24,4 +26,21 @@ public interface PortalService {
     AffiliateAccountDetail getAffiliateAccountDetail();
 
     String getApiBaseUrl();
+
+    List<RecentBookingResponse> getRecentBooking();
+
+    List<RecentBookingResponse> getFlightBookingBySearchTerm(BookingSearchDTO bookingSearchDTO);
+
+    RecentBookingResponse changeBookingStatus(BookingSearchDTO bookingSearchDTO);
+
+    FlightReservationResponse getFlightBookingDetails(String bookingNumber);
+
+    List<VisaResponse> getRecentVisaRequest(BookingSearchDTO bookingSearchDTO);
+
+    List<VisaResponse> getVisaRequestsBySearchTerm(BookingSearchDTO bookingSearchDTO);
+
+    VisaResponse changeVisaRequestStatus(BookingSearchDTO bookingSearchDTO);
+
+    List<UserResponse> getPortalUsers();
+
 }

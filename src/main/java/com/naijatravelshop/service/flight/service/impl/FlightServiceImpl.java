@@ -1,10 +1,18 @@
 package com.naijatravelshop.service.flight.service.impl;
 
+import com.naijatravelshop.persistence.model.crm.Customer;
+import com.naijatravelshop.persistence.model.crm.ServiceRequest;
+import com.naijatravelshop.persistence.model.crm.ServiceRequestActorHistory;
+import com.naijatravelshop.persistence.model.crm.ServiceRequestLog;
 import com.naijatravelshop.persistence.model.enums.*;
 import com.naijatravelshop.persistence.model.flight.FlightBookingDetail;
 import com.naijatravelshop.persistence.model.flight.FlightRoute;
 import com.naijatravelshop.persistence.model.flight.VisaRequest;
 import com.naijatravelshop.persistence.model.portal.*;
+import com.naijatravelshop.persistence.repository.crm.CustomerRepository;
+import com.naijatravelshop.persistence.repository.crm.ServiceRequestActorHistoryRepository;
+import com.naijatravelshop.persistence.repository.crm.ServiceRequestLogRepository;
+import com.naijatravelshop.persistence.repository.crm.ServiceRequestRepository;
 import com.naijatravelshop.persistence.repository.flight.FlightBookingDetailRepository;
 import com.naijatravelshop.persistence.repository.flight.FlightRouteRepository;
 import com.naijatravelshop.persistence.repository.flight.VisaRequestRepository;
@@ -15,6 +23,7 @@ import com.naijatravelshop.service.flight.pojo.request.*;
 import com.naijatravelshop.service.flight.pojo.response.ReservationResponseDTO;
 import com.naijatravelshop.service.flight.service.FlightService;
 import com.naijatravelshop.web.exceptions.BadRequestException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -40,6 +49,10 @@ public class FlightServiceImpl implements FlightService {
     private FlightBookingDetailRepository flightBookingDetailRepository;
     private FlightRouteRepository flightRouteRepository;
     private VisaRequestRepository visaRequestRepository;
+    private CustomerRepository customerRepository;
+    private ServiceRequestRepository serviceRequestRepository;
+    private ServiceRequestActorHistoryRepository serviceRequestActorHistoryRepository;
+    private ServiceRequestLogRepository serviceRequestLogRepository;
 
     private EmailService emailService;
 
@@ -55,6 +68,10 @@ public class FlightServiceImpl implements FlightService {
                              FlightBookingDetailRepository flightBookingDetailRepository,
                              FlightRouteRepository flightRouteRepository,
                              VisaRequestRepository visaRequestRepository,
+                             CustomerRepository customerRepository,
+                             ServiceRequestRepository serviceRequestRepository,
+                             ServiceRequestActorHistoryRepository serviceRequestActorHistoryRepository,
+                             ServiceRequestLogRepository serviceRequestLogRepository,
                              EmailService emailService) {
         this.addressRepository = addressRepository;
         this.paymentHistoryRepository = paymentHistoryRepository;
@@ -66,6 +83,10 @@ public class FlightServiceImpl implements FlightService {
         this.flightBookingDetailRepository = flightBookingDetailRepository;
         this.flightRouteRepository = flightRouteRepository;
         this.visaRequestRepository = visaRequestRepository;
+        this.customerRepository = customerRepository;
+        this.serviceRequestRepository = serviceRequestRepository;
+        this.serviceRequestLogRepository = serviceRequestLogRepository;
+        this.serviceRequestActorHistoryRepository = serviceRequestActorHistoryRepository;
         this.emailService = emailService;
     }
 
@@ -124,10 +145,10 @@ public class FlightServiceImpl implements FlightService {
                     FlightRoute flightRoute = new FlightRoute();
                     flightRoute.setArrivalTime(new Timestamp(simpleDateFormat.parse(flightSegmentsDTO.getArrivalTime()).getTime()));
                     flightRoute.setDepartureAirport(flightSegmentsDTO.getDepartureAirportName());
-                    flightRoute.setDepartureCityName(flightSegmentsDTO.getDepartureAirportName().substring(0, indexOfAny(flightSegmentsDTO.getArrivalAirportName(), "-")));
+                    flightRoute.setDepartureCityName(flightSegmentsDTO.getDepartureAirportName().split("-")[0]);
                     flightRoute.setDepartureTime(new Timestamp(simpleDateFormat.parse(flightSegmentsDTO.getDepartureTime()).getTime()));
                     flightRoute.setDestinationAirport(flightSegmentsDTO.getArrivalAirportName());
-                    flightRoute.setDestinationCityName(flightSegmentsDTO.getArrivalAirportName().substring(0, indexOfAny(flightSegmentsDTO.getDepartureAirportName(), "-")));
+                    flightRoute.setDestinationCityName(flightSegmentsDTO.getArrivalAirportName().split("-")[0]);
                     flightRoute.setFlightDuration(flightSegmentsDTO.getJourneyDuration());
                     flightRoute.setFlightBookingDetail(flightBookingDetail);
                     flightRoute.setFlightNumber(flightSegmentsDTO.getFlightNumber());
@@ -135,6 +156,8 @@ public class FlightServiceImpl implements FlightService {
                     flightRoute.setMarketingAirlineName(flightSegmentsDTO.getAirlineName());
                     flightRoute.setOperatingAirlineCode(flightSegmentsDTO.getAirlineCode());
                     flightRoute.setAirlineName(flightSegmentsDTO.getAirlineName());
+                    flightRoute.setBookingClass(flightSegmentsDTO.getBookingClass());
+
                     flightRouteList.add(flightRoute);
                     flightRouteRepository.save(flightRoute);
                 }
@@ -232,14 +255,105 @@ public class FlightServiceImpl implements FlightService {
         visaRequest.setReturnDate(new Timestamp(visaRequestDTO.getReturnDate().getTime()));
         visaRequest.setStatus(EntityStatus.ACTIVE);
         visaRequestRepository.save(visaRequest);
-
+        createVisaServiceRequest(visaRequest, visaRequestDTO);
         responseDTO.setReservationId(visaRequest.getId());
 
         return responseDTO;
     }
 
+    private void createFlightServiceRequest(Reservation reservation, ReservationOwner reservationOwner, ReservationRequestDTO requestDTO) {
+        Optional<Customer> optionalCustomer = customerRepository.findCustomerByEmail(reservationOwner.getEmail());
+        Customer customer = null;
+        if (optionalCustomer.isPresent()) {
+            customer = optionalCustomer.get();
+        } else {
+            customer = new Customer();
+            customer.setEmail(reservationOwner.getEmail());
+            customer.setFirstName(reservationOwner.getFirstName());
+            customer.setLastName(reservationOwner.getLastName());
+            customer.setPhoneNumber(reservationOwner.getPhoneNumber());
+            customer.setStatus(EntityStatus.ACTIVE);
+            customer.setDateOfBirth(reservationOwner.getDateOfBirth());
+            customer.setTitle(reservationOwner.getTitle());
+            customerRepository.save(customer);
+        }
+
+        ServiceRequest serviceRequest = new ServiceRequest();
+        serviceRequest.setAssignedTo(reservation.getProcessedBy());
+        serviceRequest.setCustomer(customer);
+        serviceRequest.setDescription(requestDTO.getFlightSummary());
+        serviceRequest.setPriority(Priority.MEDIUM);
+        serviceRequest.setReservation(reservation);
+        serviceRequest.setRequestId(RandomStringUtils.randomAlphabetic(6));
+        serviceRequest.setServiceType(ReservationType.FLIGHT);
+        serviceRequest.setStatus(EntityStatus.ACTIVE);
+        serviceRequestRepository.save(serviceRequest);
+
+        if (reservation.getProcessedBy()!= null) {
+            ServiceRequestActorHistory actorHistory = new ServiceRequestActorHistory();
+            actorHistory.setActor(reservation.getProcessedBy());
+            actorHistory.setServiceRequest(serviceRequest);
+            actorHistory.setStatus(EntityStatus.ACTIVE);
+            serviceRequestActorHistoryRepository.save(actorHistory);
+
+            ServiceRequestLog serviceRequestLog = new ServiceRequestLog();
+            serviceRequestLog.setActor(actorHistory);
+            serviceRequestLog.setDescription(ServiceTaskType.NEW_TASK.getValue());
+            serviceRequestLog.setSubject(ServiceTaskSubject.FLIGHT_ENQUIRY);
+            serviceRequestLog.setTaskType(ServiceTaskType.NEW_TASK);
+            serviceRequestLog.setStatus(EntityStatus.ACTIVE);
+            serviceRequestLogRepository.save(serviceRequestLog);
+        }
+    }
+
+    private void createVisaServiceRequest(VisaRequest visaRequest, VisaRequestDTO visaRequestDTO) {
+        Optional<Customer> optionalCustomer = customerRepository.findCustomerByEmail(visaRequest.getEmail());
+        Customer customer = null;
+        if (optionalCustomer.isPresent()) {
+            customer = optionalCustomer.get();
+        } else {
+            customer = new Customer();
+            customer.setEmail(visaRequestDTO.getEmail());
+            customer.setFirstName(visaRequestDTO.getFirstName());
+            customer.setLastName(visaRequestDTO.getLastName());
+            customer.setPhoneNumber(visaRequestDTO.getPhoneNumber());
+            customer.setStatus(EntityStatus.ACTIVE);
+            customerRepository.save(customer);
+        }
+
+        Optional<PortalUser> optPortalUser = portalUserRepository.findById(Long.valueOf(visaRequestDTO.getRequestById()));
+
+        ServiceRequest serviceRequest = new ServiceRequest();
+        serviceRequest.setAssignedTo(optPortalUser.orElse(null));
+        serviceRequest.setCustomer(customer);
+        serviceRequest.setDescription(visaRequestDTO.getMessage());
+        serviceRequest.setName(ServiceQueueName.VISA_REQUEST);
+        serviceRequest.setPriority(Priority.MEDIUM);
+        serviceRequest.setVisaRequest(visaRequest);
+        serviceRequest.setRequestId(RandomStringUtils.randomAlphabetic(6));
+        serviceRequest.setServiceType(ReservationType.VISA);
+        serviceRequest.setStatus(EntityStatus.ACTIVE);
+        serviceRequestRepository.save(serviceRequest);
+
+        if (optPortalUser.isPresent()) {
+            ServiceRequestActorHistory actorHistory = new ServiceRequestActorHistory();
+            actorHistory.setActor(optPortalUser.get());
+            actorHistory.setServiceRequest(serviceRequest);
+            actorHistory.setStatus(EntityStatus.ACTIVE);
+            serviceRequestActorHistoryRepository.save(actorHistory);
+
+            ServiceRequestLog serviceRequestLog = new ServiceRequestLog();
+            serviceRequestLog.setActor(actorHistory);
+            serviceRequestLog.setDescription(ServiceTaskType.NEW_TASK.getValue());
+            serviceRequestLog.setSubject(ServiceTaskSubject.VISA);
+            serviceRequestLog.setTaskType(ServiceTaskType.NEW_TASK);
+            serviceRequestLog.setStatus(EntityStatus.ACTIVE);
+            serviceRequestLogRepository.save(serviceRequestLog);
+        }
+    }
+
     private void sendFlightBookingEmail(ReservationOwner owner, Reservation reservation, List<Traveller> travellers,
-                        List<FlightRoute> itinerary) {
+                                        List<FlightRoute> itinerary) {
         log.info("Sending mail.....");
         Map<String, Object> flightBookingEmail = new HashMap<>();
         flightBookingEmail.put("recieverName", owner.getTitle() + " " + owner.getLastName());
@@ -256,15 +370,5 @@ public class FlightServiceImpl implements FlightService {
         emailService.sendHtmlEmail(owner.getEmail(), "Flight Booking Notification", "flight-booking-confirmation-template", flightBookingEmail, "travel@naijatravelshop.com");
     }
 
-    private static int indexOfAny(String s, String chars) {
-        int i = -1;
-        for (char c : chars.toCharArray()) {
-            int pos = s.indexOf(c);
-            if (pos >= 0 && (pos < i || i < 0)) {
-                i = pos;
-            }
-        }
-        return i;
-    }
 }
 
