@@ -1,17 +1,23 @@
 package com.naijatravelshop;
 
 import com.naijatravelshop.persistence.model.enums.RoleType;
+import com.naijatravelshop.persistence.model.hotel.HotelCity;
 import com.naijatravelshop.persistence.model.portal.Role;
 import com.naijatravelshop.persistence.model.portal.Setting;
+import com.naijatravelshop.persistence.repository.hotel.HotelCityRepository;
 import com.naijatravelshop.persistence.repository.portal.RoleRepository;
 import com.naijatravelshop.persistence.repository.portal.SettingRepository;
 import com.naijatravelshop.web.constants.ProjectConstant;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
+import java.io.FileReader;
 import java.util.Optional;
 
 /**
@@ -23,14 +29,17 @@ public class AppInitializator {
 
     private RoleRepository roleRepository;
     private SettingRepository settingRepository;
+    private HotelCityRepository hotelCityRepository;
 
     private static final Logger log = LoggerFactory.getLogger(AppInitializator.class);
 
 
     public AppInitializator(RoleRepository roleRepository,
-                            SettingRepository settingRepository) {
+                            SettingRepository settingRepository,
+                            HotelCityRepository hotelCityRepository) {
         this.roleRepository = roleRepository;
         this.settingRepository = settingRepository;
+        this.hotelCityRepository = hotelCityRepository;
     }
 
     @PostConstruct
@@ -38,6 +47,9 @@ public class AppInitializator {
         log.info("AppInitializator initialization logic ...");
         checkUserRole();
         createFlwCredentials();
+        createGotwCredentials();
+        // populateHotelCity();
+        createCurrencyExchangeRate();
     }
 
     private void checkUserRole() {
@@ -59,6 +71,19 @@ public class AppInitializator {
             role.setDisplayName(RoleType.PORTAL_USER.getValue());
             role.setName(RoleType.PORTAL_USER);
             roleRepository.save(role);
+        }
+    }
+
+    void createGotwCredentials() {
+        Optional<Setting> optionalSetting;
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.GOTW_HOST_URL);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.GOTW_HOST_URL);
+            setting.setName(ProjectConstant.GOTW_HOST_URL);
+            setting.setValue("xmldev.dotwconnect.com/gatewayV4.dotw");
+            settingRepository.save(setting);
         }
     }
 
@@ -126,6 +151,42 @@ public class AppInitializator {
             setting.setDescription(ProjectConstant.API_BASE_URL);
             setting.setName(ProjectConstant.API_BASE_URL);
             setting.setValue("http://139.162.210.123:8086/v1/");
+            settingRepository.save(setting);
+        }
+    }
+
+    void populateHotelCity() {
+        JSONParser parser = new JSONParser();
+
+        try {
+            JSONArray array = (JSONArray) parser.parse(new FileReader("C:/Users/Bruno/Downloads/hotelcity.json"));
+
+            for (Object o : array) {
+                JSONObject city = (JSONObject) o;
+
+                HotelCity hotelCity = new HotelCity();
+                hotelCity.setCode((String) city.get("code"));
+                hotelCity.setCountryCode((String) city.get("countryCode"));
+                hotelCity.setCountryName((String) city.get("countryName"));
+                hotelCity.setName((String) city.get("name"));
+
+                hotelCityRepository.save(hotelCity);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void createCurrencyExchangeRate() {
+        Optional<Setting> optionalSetting;
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.CURRENCY_EXCHANGE_RATE);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.CURRENCY_EXCHANGE_RATE);
+            setting.setName(ProjectConstant.CURRENCY_EXCHANGE_RATE);
+            setting.setValue("365");
             settingRepository.save(setting);
         }
     }

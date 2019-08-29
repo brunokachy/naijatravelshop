@@ -5,25 +5,24 @@ import com.naijatravelshop.persistence.model.crm.ServiceRequest;
 import com.naijatravelshop.persistence.model.crm.ServiceRequestActorHistory;
 import com.naijatravelshop.persistence.model.crm.ServiceRequestLog;
 import com.naijatravelshop.persistence.model.enums.*;
-import com.naijatravelshop.persistence.model.flight.FlightBookingDetail;
-import com.naijatravelshop.persistence.model.flight.FlightRoute;
-import com.naijatravelshop.persistence.model.flight.VisaRequest;
+import com.naijatravelshop.persistence.model.flight.*;
 import com.naijatravelshop.persistence.model.portal.*;
 import com.naijatravelshop.persistence.repository.crm.CustomerRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestActorHistoryRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestLogRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestRepository;
-import com.naijatravelshop.persistence.repository.flight.FlightBookingDetailRepository;
-import com.naijatravelshop.persistence.repository.flight.FlightRouteRepository;
-import com.naijatravelshop.persistence.repository.flight.VisaRequestRepository;
+import com.naijatravelshop.persistence.repository.flight.*;
 import com.naijatravelshop.persistence.repository.payment.PaymentHistoryRepository;
 import com.naijatravelshop.persistence.repository.portal.*;
 import com.naijatravelshop.service.email.EmailService;
 import com.naijatravelshop.service.flight.pojo.request.*;
+import com.naijatravelshop.service.flight.pojo.response.AirportDTO;
 import com.naijatravelshop.service.flight.pojo.response.ReservationResponseDTO;
 import com.naijatravelshop.service.flight.service.FlightService;
 import com.naijatravelshop.web.exceptions.BadRequestException;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -53,7 +52,8 @@ public class FlightServiceImpl implements FlightService {
     private ServiceRequestRepository serviceRequestRepository;
     private ServiceRequestActorHistoryRepository serviceRequestActorHistoryRepository;
     private ServiceRequestLogRepository serviceRequestLogRepository;
-
+    private AirportRepository airportRepository;
+    private FlightCityRepository flightCityRepository;
     private EmailService emailService;
 
     private static final Logger log = LoggerFactory.getLogger(FlightServiceImpl.class);
@@ -72,6 +72,8 @@ public class FlightServiceImpl implements FlightService {
                              ServiceRequestRepository serviceRequestRepository,
                              ServiceRequestActorHistoryRepository serviceRequestActorHistoryRepository,
                              ServiceRequestLogRepository serviceRequestLogRepository,
+                             AirportRepository airportRepository,
+                             FlightCityRepository flightCityRepository,
                              EmailService emailService) {
         this.addressRepository = addressRepository;
         this.paymentHistoryRepository = paymentHistoryRepository;
@@ -87,6 +89,8 @@ public class FlightServiceImpl implements FlightService {
         this.serviceRequestRepository = serviceRequestRepository;
         this.serviceRequestLogRepository = serviceRequestLogRepository;
         this.serviceRequestActorHistoryRepository = serviceRequestActorHistoryRepository;
+        this.airportRepository = airportRepository;
+        this.flightCityRepository = flightCityRepository;
         this.emailService = emailService;
     }
 
@@ -255,13 +259,41 @@ public class FlightServiceImpl implements FlightService {
         visaRequest.setReturnDate(new Timestamp(visaRequestDTO.getReturnDate().getTime()));
         visaRequest.setStatus(EntityStatus.ACTIVE);
         visaRequestRepository.save(visaRequest);
-        createVisaServiceRequest(visaRequest, visaRequestDTO);
+//        createVisaServiceRequest(visaRequest, visaRequestDTO);
         responseDTO.setReservationId(visaRequest.getId());
 
         return responseDTO;
     }
 
-    private void createFlightServiceRequest(Reservation reservation, ReservationOwner reservationOwner, ReservationRequestDTO requestDTO) {
+    @Cacheable(value = "airports", unless = "#result == null")
+    @Override
+    public List<AirportDTO> getAllAirports() {
+        List<AirportDTO> airportDTOS = new ArrayList<>();
+        List<Airport> airportList = airportRepository.getAirportByPopularityIndexGreaterThan(0);
+        airportList.forEach(airport -> {
+            Optional<FlightCity> flightCity = flightCityRepository.findById(airport.getFlightCity());
+            Optional<Country> country = countryRepository.findById(flightCity.get().getCountry());
+            AirportDTO airportDTO = AirportDTO
+                    .builder()
+                    .city(flightCity.get().getName())
+                    .country(country.get().getName())
+                    .gmt(airport.getGmt())
+                    .iataCode(airport.getIataCode())
+                    .icaoCode(airport.getIcaoCode())
+                    .latitude(airport.getLatitude())
+                    .longitude(airport.getLongitude())
+                    .name(airport.getName())
+                    .displayName(airport.getName() + " (" + airport.getIataCode() + "), " + flightCity.get().getName())
+                    .timezone(airport.getTimezone())
+                    .build();
+
+            airportDTOS.add(airportDTO);
+        });
+        return airportDTOS;
+    }
+
+    @Transactional
+    public void createFlightServiceRequest(Reservation reservation, ReservationOwner reservationOwner, ReservationRequestDTO requestDTO) {
         Optional<Customer> optionalCustomer = customerRepository.findCustomerByEmail(reservationOwner.getEmail());
         Customer customer = null;
         if (optionalCustomer.isPresent()) {
@@ -289,7 +321,7 @@ public class FlightServiceImpl implements FlightService {
         serviceRequest.setStatus(EntityStatus.ACTIVE);
         serviceRequestRepository.save(serviceRequest);
 
-        if (reservation.getProcessedBy()!= null) {
+        if (reservation.getProcessedBy() != null) {
             ServiceRequestActorHistory actorHistory = new ServiceRequestActorHistory();
             actorHistory.setActor(reservation.getProcessedBy());
             actorHistory.setServiceRequest(serviceRequest);
@@ -306,7 +338,8 @@ public class FlightServiceImpl implements FlightService {
         }
     }
 
-    private void createVisaServiceRequest(VisaRequest visaRequest, VisaRequestDTO visaRequestDTO) {
+    @Transactional
+    public void createVisaServiceRequest(VisaRequest visaRequest, VisaRequestDTO visaRequestDTO) {
         Optional<Customer> optionalCustomer = customerRepository.findCustomerByEmail(visaRequest.getEmail());
         Customer customer = null;
         if (optionalCustomer.isPresent()) {

@@ -2,6 +2,7 @@ package com.naijatravelshop.web.controllers.api;
 
 import com.naijatravelshop.service.flight.pojo.request.ReservationRequestDTO;
 import com.naijatravelshop.service.flight.pojo.request.VisaRequestDTO;
+import com.naijatravelshop.service.flight.pojo.response.AirportDTO;
 import com.naijatravelshop.service.flight.pojo.response.ReservationResponseDTO;
 import com.naijatravelshop.service.flight.service.FlightService;
 import com.naijatravelshop.web.pojo.ApiResponse;
@@ -12,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Created by Bruno on
@@ -24,7 +27,7 @@ public class FlightController {
 
     private FlightService flightService;
 
-    private static final Logger log = LoggerFactory.getLogger(FlightService.class);
+    private static final Logger log = LoggerFactory.getLogger(FlightController.class);
 
     public FlightController(FlightService flightService) {
         this.flightService = flightService;
@@ -50,6 +53,17 @@ public class FlightController {
         ApiResponse<ReservationResponseDTO> apiResponse = new ApiResponse<>();
         ReservationResponseDTO responseDTO = flightService.createVisaRequest(visaRequestDTO);
         apiResponse.setMessage("Visa request was created successfully");
+        apiResponse.setData(responseDTO);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Fetch Airports")
+    @GetMapping(value = {"/fetch_airports"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<List<AirportDTO>>> fetchAirports() {
+        log.info("FETCH AIRPORTS: {}");
+        ApiResponse<List<AirportDTO>> apiResponse = new ApiResponse<>();
+        List<AirportDTO> responseDTO = flightService.getAllAirports();
+        apiResponse.setMessage("Airports fetched successfully");
         apiResponse.setData(responseDTO);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
     }

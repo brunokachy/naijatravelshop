@@ -22,6 +22,10 @@ public class ProjectConstant {
     public static final String AFFILIATE_SECRET_KEY = "AFFILIATE SECRET KEY";
     public static final String AFFILIATE_CODE = "AFFILIATE CODE";
 
+    public static final String GOTW_HOST_URL = "GOTW_HOST_URL";
+
+    public static final String CURRENCY_EXCHANGE_RATE = "CURRENCY EXCHANGE RATE";
+
 
 
 }

@@ -18,8 +18,6 @@ public class HotelBookingDetail extends AuditModel implements Serializable {
     private Timestamp checkinDate;
     @Column(nullable = false)
     private Timestamp checkoutDate;
-    @ManyToOne
-    private Property property;
     private Integer numberOfRoom = 0;
     private Integer numberOfInfant = 0;
     private Integer numberOfAdult = 0;
@@ -50,14 +48,6 @@ public class HotelBookingDetail extends AuditModel implements Serializable {
 
     public void setCheckoutDate(Timestamp checkoutDate) {
         this.checkoutDate = checkoutDate;
-    }
-
-    public Property getProperty() {
-        return property;
-    }
-
-    public void setProperty(Property property) {
-        this.property = property;
     }
 
     public Integer getNumberOfRoom() {
