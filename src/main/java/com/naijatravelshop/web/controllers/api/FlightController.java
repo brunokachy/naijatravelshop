@@ -63,6 +63,7 @@ public class FlightController {
         log.info("FETCH AIRPORTS: {}");
         ApiResponse<List<AirportDTO>> apiResponse = new ApiResponse<>();
         List<AirportDTO> responseDTO = flightService.getAllAirports();
+        log.info("Final size of airports {}", responseDTO.size());
         apiResponse.setMessage("Airports fetched successfully");
         apiResponse.setData(responseDTO);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);

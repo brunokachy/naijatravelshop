@@ -1,24 +1,27 @@
 package com.naijatravelshop.client.hotel.pojo.response.search_hotel;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 
 /**
  * Created by Bruno on
  * 14/08/2019
  */
-@Getter
-@Setter
-@ToString
-@Builder
+@Data
+@XmlRootElement(name = "room")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Room {
 
     private List<RoomType> roomType;
-    private String _adults;
-    private String _children;
-    private String _extrabeds;
+    @XmlAttribute(name = "adults")
+    private String adults;
+    @XmlAttribute(name = "children")
+    private String children;
+    @XmlAttribute(name = "extrabeds")
+    private String extrabeds;
 }

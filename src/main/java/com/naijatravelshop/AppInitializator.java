@@ -1,10 +1,15 @@
 package com.naijatravelshop;
 
+import com.naijatravelshop.persistence.model.enums.EntityStatus;
 import com.naijatravelshop.persistence.model.enums.RoleType;
 import com.naijatravelshop.persistence.model.hotel.HotelCity;
+import com.naijatravelshop.persistence.model.portal.PortalUser;
+import com.naijatravelshop.persistence.model.portal.PortalUserRoleMap;
 import com.naijatravelshop.persistence.model.portal.Role;
 import com.naijatravelshop.persistence.model.portal.Setting;
 import com.naijatravelshop.persistence.repository.hotel.HotelCityRepository;
+import com.naijatravelshop.persistence.repository.portal.PortalUserRepository;
+import com.naijatravelshop.persistence.repository.portal.PortalUserRoleMapRepository;
 import com.naijatravelshop.persistence.repository.portal.RoleRepository;
 import com.naijatravelshop.persistence.repository.portal.SettingRepository;
 import com.naijatravelshop.web.constants.ProjectConstant;
@@ -13,6 +18,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +36,25 @@ public class AppInitializator {
     private RoleRepository roleRepository;
     private SettingRepository settingRepository;
     private HotelCityRepository hotelCityRepository;
+    private PortalUserRepository portalUserRepository;
+    private PortalUserRoleMapRepository portalUserRoleMapRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final Logger log = LoggerFactory.getLogger(AppInitializator.class);
 
 
     public AppInitializator(RoleRepository roleRepository,
                             SettingRepository settingRepository,
-                            HotelCityRepository hotelCityRepository) {
+                            HotelCityRepository hotelCityRepository,
+                            PortalUserRepository portalUserRepository,
+                            PortalUserRoleMapRepository portalUserRoleMapRepository,
+                            PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.settingRepository = settingRepository;
         this.hotelCityRepository = hotelCityRepository;
+        this.portalUserRepository = portalUserRepository;
+        this.portalUserRoleMapRepository = portalUserRoleMapRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostConstruct
@@ -47,9 +62,10 @@ public class AppInitializator {
         log.info("AppInitializator initialization logic ...");
         checkUserRole();
         createFlwCredentials();
-        createGotwCredentials();
+        createDotwCredentials();
         // populateHotelCity();
         createCurrencyExchangeRate();
+        createSuperAdmin();
     }
 
     private void checkUserRole() {
@@ -72,17 +88,158 @@ public class AppInitializator {
             role.setName(RoleType.PORTAL_USER);
             roleRepository.save(role);
         }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.GUEST);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("Guest");
+            role.setDisplayName(RoleType.GUEST.getValue());
+            role.setName(RoleType.GUEST);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.TICKETING_OFFICER);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("TICKETING OFFICER");
+            role.setDisplayName(RoleType.TICKETING_OFFICER.getValue());
+            role.setName(RoleType.TICKETING_OFFICER);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.CUSTOMER_SUPPORT);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("CUSTOMER SUPPORT");
+            role.setDisplayName(RoleType.CUSTOMER_SUPPORT.getValue());
+            role.setName(RoleType.CUSTOMER_SUPPORT);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.HOTEL_CONSULTANT);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("HOTEL CONSULTANT");
+            role.setDisplayName(RoleType.HOTEL_CONSULTANT.getValue());
+            role.setName(RoleType.HOTEL_CONSULTANT);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.TRAVEL_CONSULTANT);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("TRAVEL CONSULTANT");
+            role.setDisplayName(RoleType.TRAVEL_CONSULTANT.getValue());
+            role.setName(RoleType.TRAVEL_CONSULTANT);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.VISA_CONSULTANT);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("VISA CONSULTANT");
+            role.setDisplayName(RoleType.VISA_CONSULTANT.getValue());
+            role.setName(RoleType.VISA_CONSULTANT);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.PRICING_OFFICER);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("PRICING OFFICER");
+            role.setDisplayName(RoleType.PRICING_OFFICER.getValue());
+            role.setName(RoleType.PRICING_OFFICER);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.FINANCE_OFFICER);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("FINANCE OFFICER");
+            role.setDisplayName(RoleType.FINANCE_OFFICER.getValue());
+            role.setName(RoleType.FINANCE_OFFICER);
+            roleRepository.save(role);
+        }
+
+        optionalRole = roleRepository.findFirstByNameEquals(RoleType.SUPERVISOR);
+        if (!optionalRole.isPresent()) {
+            Role role = new Role();
+            role.setDescription("SUPERVISOR");
+            role.setDisplayName(RoleType.SUPERVISOR.getValue());
+            role.setName(RoleType.SUPERVISOR);
+            roleRepository.save(role);
+        }
     }
 
-    void createGotwCredentials() {
+    @Transactional
+    void createSuperAdmin() {
+        Optional<PortalUser> optionalPortalUser;
+
+        optionalPortalUser = portalUserRepository.findFirstByEmailAndStatus("superadmin@naijatravelshop.com", EntityStatus.ACTIVE);
+        if (!optionalPortalUser.isPresent()) {
+            PortalUser portalUser = new PortalUser();
+            portalUser.setPassword(passwordEncoder.encode("&$dS3ndM#**"));
+            portalUser.setFirstName("Super Admin");
+            portalUser.setLastName("Super Admin");
+            portalUser.setPhoneNumber("08141500042");
+            portalUser.setEmail("superadmin@naijatravelshop.com");
+            portalUser.setStatus(EntityStatus.ACTIVE);
+            portalUserRepository.save(portalUser);
+
+            Optional<Role> optionalRole = roleRepository.findFirstByNameEquals(RoleType.SUPER_ADMIN);
+            PortalUserRoleMap portalUserRoleMap = new PortalUserRoleMap();
+            portalUserRoleMap.setPortalUser(portalUser);
+            portalUserRoleMap.setRole(optionalRole.get());
+            portalUserRoleMap.setStatus(EntityStatus.ACTIVE);
+            portalUserRoleMapRepository.save(portalUserRoleMap);
+        }
+    }
+
+    void createDotwCredentials() {
         Optional<Setting> optionalSetting;
 
-        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.GOTW_HOST_URL);
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_HOST_URL);
         if (!optionalSetting.isPresent()) {
             Setting setting = new Setting();
-            setting.setDescription(ProjectConstant.GOTW_HOST_URL);
-            setting.setName(ProjectConstant.GOTW_HOST_URL);
-            setting.setValue("xmldev.dotwconnect.com/gatewayV4.dotw");
+            setting.setDescription(ProjectConstant.DOTW_HOST_URL);
+            setting.setName(ProjectConstant.DOTW_HOST_URL);
+            setting.setValue("https://xmldev.dotwconnect.com/gatewayV4.dotw");
+            settingRepository.save(setting);
+        }
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_CUSTOMER_NAME);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.DOTW_CUSTOMER_NAME);
+            setting.setName(ProjectConstant.DOTW_CUSTOMER_NAME);
+            setting.setValue("NaijaTravelShop LifeStyle Company Limited");
+            settingRepository.save(setting);
+        }
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_LOGIN_ID);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.DOTW_LOGIN_ID);
+            setting.setName(ProjectConstant.DOTW_LOGIN_ID);
+            setting.setValue("NaijaTravelShop");
+            settingRepository.save(setting);
+        }
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_LOGIN_PASSWORD);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.DOTW_LOGIN_PASSWORD);
+            setting.setName(ProjectConstant.DOTW_LOGIN_PASSWORD);
+            setting.setValue("A66E70CF8262E3040EAB0B755BDA247D");
+            settingRepository.save(setting);
+        }
+
+        optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_COMPANY_CODE);
+        if (!optionalSetting.isPresent()) {
+            Setting setting = new Setting();
+            setting.setDescription(ProjectConstant.DOTW_COMPANY_CODE);
+            setting.setName(ProjectConstant.DOTW_COMPANY_CODE);
+            setting.setValue("1612065");
             settingRepository.save(setting);
         }
     }

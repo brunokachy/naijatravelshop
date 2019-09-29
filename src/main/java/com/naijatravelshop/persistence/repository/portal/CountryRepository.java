@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface CountryRepository extends CrudRepository<Country, Long> {
 
     Optional<Country> findFirstByCode(String code);
+
+    Optional<Country> findFirstByName(String name);
 }

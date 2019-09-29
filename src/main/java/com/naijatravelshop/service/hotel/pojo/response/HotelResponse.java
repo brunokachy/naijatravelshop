@@ -1,13 +1,5 @@
 package com.naijatravelshop.service.hotel.pojo.response;
 
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Amenitie;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Business;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Description;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.GeoPoint;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Image;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Images;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Leisure;
-import com.naijatravelshop.client.hotel.pojo.response.search_hotel.Thumb;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

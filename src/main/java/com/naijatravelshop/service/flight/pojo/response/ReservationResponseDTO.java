@@ -1,29 +1,19 @@
 package com.naijatravelshop.service.flight.pojo.response;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serializable;
+
 /**
  * Created by Bruno on
  * 18/05/2019
  */
-
-public class ReservationResponseDTO {
+@Getter
+@Setter
+public class ReservationResponseDTO implements Serializable {
 
     private String bookingNumber;
 
     private Long reservationId;
-
-    public String getBookingNumber() {
-        return bookingNumber;
-    }
-
-    public void setBookingNumber(String bookingNumber) {
-        this.bookingNumber = bookingNumber;
-    }
-
-    public Long getReservationId() {
-        return reservationId;
-    }
-
-    public void setReservationId(Long reservationId) {
-        this.reservationId = reservationId;
-    }
 }

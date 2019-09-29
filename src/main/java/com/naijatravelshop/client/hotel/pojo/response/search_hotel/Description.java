@@ -1,18 +1,18 @@
 package com.naijatravelshop.client.hotel.pojo.response.search_hotel;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Created by Bruno on
  * 15/08/2019
  */
-@Getter
-@Setter
-@ToString
-@Builder
+@Data
+@XmlRootElement(name = "description")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Description {
-    Language Language;
+  private  String language;
 }

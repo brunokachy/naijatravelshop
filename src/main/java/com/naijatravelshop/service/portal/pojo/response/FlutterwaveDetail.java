@@ -5,17 +5,14 @@ import lombok.Setter;
 
 /**
  * Created by Bruno on
- * 23/05/2019
+ * 21/09/2019
  */
 @Getter
 @Setter
-public class AffiliateAccountDetail {
-
+public class FlutterwaveDetail {
     private String publicKey;
 
     private String secretKey;
 
-    private String affiliateCode;
-
-    private String baseUrl;
+    private String verifyEndpoint;
 }

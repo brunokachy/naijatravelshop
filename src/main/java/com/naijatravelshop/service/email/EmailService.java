@@ -13,4 +13,6 @@ public interface EmailService {
     void sendHtmlEmail(String[] recipients, String subject, String templateFileName, Map<String, Object> emailVariables, String emailSender);
 
     void sendEmail(String[] recipients, String subject, String content, boolean isHTML, String emailSender);
+
+    void sendHTMLSendGrid(String from, String to, String subject, String body);
 }

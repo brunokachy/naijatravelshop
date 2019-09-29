@@ -1,11 +1,14 @@
 package com.naijatravelshop.service.portal.pojo.request;
 
-import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Created by Bruno on
  * 21/06/2019
  */
+@Getter
+@Setter
 public class BookingSearchDTO {
 
     private String startDate;
@@ -16,35 +19,6 @@ public class BookingSearchDTO {
 
     private String bookingNo;
 
-    public String getStartDate() {
-        return startDate;
-    }
+    private String ownerEmail;
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
-    public String getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getBookingStatus() {
-        return bookingStatus;
-    }
-
-    public void setBookingStatus(String bookingStatus) {
-        this.bookingStatus = bookingStatus;
-    }
-
-    public String getBookingNo() {
-        return bookingNo;
-    }
-
-    public void setBookingNo(String bookingNo) {
-        this.bookingNo = bookingNo;
-    }
 }

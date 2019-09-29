@@ -4,33 +4,67 @@ import com.naijatravelshop.persistence.model.crm.Customer;
 import com.naijatravelshop.persistence.model.crm.ServiceRequest;
 import com.naijatravelshop.persistence.model.crm.ServiceRequestActorHistory;
 import com.naijatravelshop.persistence.model.crm.ServiceRequestLog;
-import com.naijatravelshop.persistence.model.enums.*;
-import com.naijatravelshop.persistence.model.flight.*;
-import com.naijatravelshop.persistence.model.portal.*;
+import com.naijatravelshop.persistence.model.enums.EntityStatus;
+import com.naijatravelshop.persistence.model.enums.Gender;
+import com.naijatravelshop.persistence.model.enums.Priority;
+import com.naijatravelshop.persistence.model.enums.ProcessStatus;
+import com.naijatravelshop.persistence.model.enums.ReservationType;
+import com.naijatravelshop.persistence.model.enums.ServiceQueueName;
+import com.naijatravelshop.persistence.model.enums.ServiceTaskSubject;
+import com.naijatravelshop.persistence.model.enums.ServiceTaskType;
+import com.naijatravelshop.persistence.model.enums.SupplierGroupType;
+import com.naijatravelshop.persistence.model.flight.Airport;
+import com.naijatravelshop.persistence.model.flight.FlightBookingDetail;
+import com.naijatravelshop.persistence.model.flight.FlightCity;
+import com.naijatravelshop.persistence.model.flight.FlightRoute;
+import com.naijatravelshop.persistence.model.flight.VisaRequest;
+import com.naijatravelshop.persistence.model.portal.Address;
+import com.naijatravelshop.persistence.model.portal.Country;
+import com.naijatravelshop.persistence.model.portal.PortalUser;
+import com.naijatravelshop.persistence.model.portal.Reservation;
+import com.naijatravelshop.persistence.model.portal.ReservationOwner;
+import com.naijatravelshop.persistence.model.portal.Traveller;
 import com.naijatravelshop.persistence.repository.crm.CustomerRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestActorHistoryRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestLogRepository;
 import com.naijatravelshop.persistence.repository.crm.ServiceRequestRepository;
-import com.naijatravelshop.persistence.repository.flight.*;
+import com.naijatravelshop.persistence.repository.flight.AirportRepository;
+import com.naijatravelshop.persistence.repository.flight.FlightBookingDetailRepository;
+import com.naijatravelshop.persistence.repository.flight.FlightCityRepository;
+import com.naijatravelshop.persistence.repository.flight.FlightRouteRepository;
+import com.naijatravelshop.persistence.repository.flight.VisaRequestRepository;
 import com.naijatravelshop.persistence.repository.payment.PaymentHistoryRepository;
-import com.naijatravelshop.persistence.repository.portal.*;
+import com.naijatravelshop.persistence.repository.portal.AddressRepository;
+import com.naijatravelshop.persistence.repository.portal.CountryRepository;
+import com.naijatravelshop.persistence.repository.portal.PortalUserRepository;
+import com.naijatravelshop.persistence.repository.portal.ReservationOwnerRepository;
+import com.naijatravelshop.persistence.repository.portal.ReservationRepository;
+import com.naijatravelshop.persistence.repository.portal.TravellerRepository;
 import com.naijatravelshop.service.email.EmailService;
-import com.naijatravelshop.service.flight.pojo.request.*;
+import com.naijatravelshop.service.flight.pojo.request.FlightSegmentsDTO;
+import com.naijatravelshop.service.flight.pojo.request.OriginDestinationOptionsDTO;
+import com.naijatravelshop.service.flight.pojo.request.ReservationRequestDTO;
+import com.naijatravelshop.service.flight.pojo.request.TravellerDTO;
+import com.naijatravelshop.service.flight.pojo.request.VisaRequestDTO;
 import com.naijatravelshop.service.flight.pojo.response.AirportDTO;
 import com.naijatravelshop.service.flight.pojo.response.ReservationResponseDTO;
 import com.naijatravelshop.service.flight.service.FlightService;
 import com.naijatravelshop.web.exceptions.BadRequestException;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.cache.annotation.CacheEvict;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by Bruno on
@@ -100,7 +134,6 @@ public class FlightServiceImpl implements FlightService {
         try {
             Optional<Country> optionalCountry = countryRepository.findFirstByCode(requestDTO.getReservationOwner().getCountryCode());
 
-            log.info("createReservation: {}", requestDTO.toString());
             Address address = new Address();
             address.setName(requestDTO.getReservationOwner().getAddress());
             address.setCity(requestDTO.getReservationOwner().getCity());
@@ -241,12 +274,12 @@ public class FlightServiceImpl implements FlightService {
         ReservationResponseDTO responseDTO = new ReservationResponseDTO();
         Optional<Country> optionalCountry;
         VisaRequest visaRequest = new VisaRequest();
-        optionalCountry = countryRepository.findFirstByCode(visaRequestDTO.getCountryOfResidence());
+        optionalCountry = countryRepository.findFirstByName(visaRequestDTO.getCountryOfResidence());
         if (optionalCountry.isPresent()) {
             visaRequest.setCountryOfResidence(optionalCountry.get());
         }
         visaRequest.setDepartureDate(new Timestamp(visaRequestDTO.getDepartureDate().getTime()));
-        optionalCountry = countryRepository.findFirstByCode(visaRequestDTO.getDestinationCountry());
+        optionalCountry = countryRepository.findFirstByName(visaRequestDTO.getDestinationCountry());
         if (optionalCountry.isPresent()) {
             visaRequest.setDestinationCountry(optionalCountry.get());
         }
@@ -270,6 +303,7 @@ public class FlightServiceImpl implements FlightService {
     public List<AirportDTO> getAllAirports() {
         List<AirportDTO> airportDTOS = new ArrayList<>();
         List<Airport> airportList = airportRepository.getAirportByPopularityIndexGreaterThan(0);
+        log.info("number of airports {}", airportList.size());
         airportList.forEach(airport -> {
             Optional<FlightCity> flightCity = flightCityRepository.findById(airport.getFlightCity());
             Optional<Country> country = countryRepository.findById(flightCity.get().getCountry());

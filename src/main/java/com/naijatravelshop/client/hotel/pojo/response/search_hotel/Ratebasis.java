@@ -1,22 +1,24 @@
 package com.naijatravelshop.client.hotel.pojo.response.search_hotel;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
 
 /**
  * Created by Bruno on
  * 12/08/2019
  */
-@Getter
-@Setter
-@ToString
-@Builder
+@Data
+@XmlRootElement(name = "ratebasis")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Ratebasis {
 
-    Ratetype rateType;
+    private String rateType;
     private String total;
-    private String _id;
+    @XmlAttribute(name = "id")
+    private String id;
 }

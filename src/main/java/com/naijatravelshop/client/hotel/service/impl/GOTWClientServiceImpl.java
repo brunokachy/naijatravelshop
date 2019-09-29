@@ -3,7 +3,8 @@ package com.naijatravelshop.client.hotel.service.impl;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.BookingDetails;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.Child;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.Children;
-import com.naijatravelshop.client.hotel.pojo.request.search_hotel.Condition;
+import com.naijatravelshop.client.hotel.pojo.request.search_hotel.ConditionA;
+import com.naijatravelshop.client.hotel.pojo.request.search_hotel.ConditionC;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.Customer;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.FieldValues;
 import com.naijatravelshop.client.hotel.pojo.request.search_hotel.Fields;
@@ -26,6 +27,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
@@ -58,117 +60,140 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
 
     @Value("${dotw.request.command}")
     private String searchHotelCommand;
+    @Value("${dotw.source}")
+    private String source;
+    @Value("${dotw.product}")
+    private String product;
+    @Value("${dotw.currency.code}")
+    private String currency;
 
     @Override
-    public Result searchHotel(SearchHotelDTO searchHotelDTO) {
+    public List<Hotel> searchHotel(SearchHotelDTO searchHotelDTO) {
+        Optional<Setting> code = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_COMPANY_CODE);
+        Optional<Setting> id = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_LOGIN_ID);
+        Optional<Setting> password = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_LOGIN_PASSWORD);
 
-        Result result = searchHotelForPrice(searchHotelDTO);
-
-        if (result.getSuccessful().equalsIgnoreCase("TRUE")) {
-            Result hotelDetailResult = searchHotelForDetails(searchHotelDTO, result);
-            if (hotelDetailResult.getSuccessful().equalsIgnoreCase("TRUE")) {
-                result.setCurrencyShort(hotelDetailResult.getCurrencyShort());
-                for (int i = 0; i < result.getHotels().size(); i++) {
-                    for (int j = 0; j < hotelDetailResult.getHotels().size(); j++) {
-                        Hotel hotel = result.getHotels().get(i);
-
-                        if (hotel.get_hotelid().equals(hotelDetailResult.getHotels().get(j).get_hotelid())) {
-                            hotel.setDescription1(hotelDetailResult.getHotels().get(j).getDescription1());
-                            hotel.setDescription2(hotelDetailResult.getHotels().get(j).getDescription2());
-                            hotel.setHotelName(hotelDetailResult.getHotels().get(j).getHotelName());
-                            hotel.setAddress(hotelDetailResult.getHotels().get(j).getAddress());
-                            hotel.setCityName(hotelDetailResult.getHotels().get(j).getCityName());
-                            hotel.setCityCode(hotelDetailResult.getHotels().get(j).getCityCode());
-                            hotel.setCountryCode(hotelDetailResult.getHotels().get(j).getCountryCode());
-                            hotel.setCountryName(hotelDetailResult.getHotels().get(j).getCountryName());
-                            hotel.setAmenitie(hotelDetailResult.getHotels().get(j).getAmenitie());
-                            hotel.setLeisure(hotelDetailResult.getHotels().get(j).getLeisure());
-                            hotel.setBusiness(hotelDetailResult.getHotels().get(j).getBusiness());
-                            hotel.setRating(hotelDetailResult.getHotels().get(j).getRating());
-                            hotel.setImages(hotelDetailResult.getHotels().get(j).getImages());
-                            hotel.setGeoPoint(hotelDetailResult.getHotels().get(j).getGeoPoint());
-                            hotel.setRooms(hotelDetailResult.getHotels().get(i).getRooms());
-                        }
-                    }
-                }
-            } else {
-                throw new BadRequestException("Error in retrieving hotel data");
-            }
-            return result;
-        } else {
+        Result result = searchHotelForPrice(searchHotelDTO, code.get().getValue(), id.get().getValue(), password.get().getValue());
+        if (result.getHotels() == null) {
             throw new BadRequestException("Error in retrieving hotel data");
         }
+        Result hotelDetailResult = searchHotelForDetails(searchHotelDTO, result, code.get().getValue(), id.get().getValue(), password.get().getValue());
+        if (hotelDetailResult.getHotels() == null) {
+            throw new BadRequestException("Error in retrieving hotel data");
+        }
+
+        List<Hotel> hotels = new ArrayList<>();
+        for (int i = 0; i < result.getHotels().size(); i++) {
+            for (int j = 0; j < hotelDetailResult.getHotels().size(); j++) {
+                Hotel hotel = result.getHotels().get(i);
+                Hotel hotel1 = hotelDetailResult.getHotels().get(j);
+                if (hotel.getHotelid().equals(hotel1.getHotelid())) {
+                    hotel.setDescription1(hotel1.getDescription1());
+                    hotel.setDescription2(hotel1.getDescription2());
+                    hotel.setHotelName(hotel1.getHotelName());
+                    hotel.setAddress(hotel1.getAddress());
+                    hotel.setCityName(hotel1.getCityName());
+                    hotel.setCityCode(hotel1.getCityCode());
+                    hotel.setCountryCode(hotel1.getCountryCode());
+                    hotel.setCountryName(hotel1.getCountryName());
+                    hotel.setAmenitie(hotel1.getAmenitie());
+                    hotel.setLeisure(hotel1.getLeisure());
+                    hotel.setBusiness(hotel1.getBusiness());
+                    hotel.setRating(hotel1.getRating());
+                    hotel.setImages(hotel1.getImages());
+                    hotel.setGeoPoint(hotel1.getGeoPoint());
+                    hotels.add(hotel);
+                }
+            }
+        }
+        return hotels;
     }
 
-    private Result searchHotelForPrice(SearchHotelDTO searchHotelDTO) {
-        Customer customer = Customer.builder()
-                .request(Request.builder()
-                        .bookingDetails(prepareBookingDetails(searchHotelDTO))
-                        .returns(Return.builder()
-                                .filters(Filters.builder()
-                                        .city(searchHotelDTO.getCityCode())
-                                        .xmlnsa("http://us.dotwconnect.com/xsd/atomicCondition")
-                                        .xmlnsc("http://us.dotwconnect.com/xsd/complexCondition")
-                                        .noPrice("false")
-                                        .build())
-                                .build())
-                        ._command(searchHotelCommand)
-                        .build())
-                .build();
+    private Result searchHotelForPrice(SearchHotelDTO searchHotelDTO, String id, String username, String password) {
+        Filters filters = new Filters();
+        filters.setCity(searchHotelDTO.getCityCode());
+        filters.setXmlnsa("http://us.dotwconnect.com/xsd/atomicCondition");
+        filters.setXmlnsc("http://us.dotwconnect.com/xsd/complexCondition");
+        filters.setNoPrice("false");
 
+        Return aReturn = new Return();
+        aReturn.setFilters(filters);
+
+        Request request = new Request();
+        request.set_command(searchHotelCommand);
+        request.setBookingDetails(prepareBookingDetails(searchHotelDTO));
+        request.setReturns(aReturn);
+
+        Customer customer = new Customer();
+        customer.setId(id);
+        customer.setPassword(password);
+        customer.setProduct(product);
+        customer.setSource(source);
+        customer.setUsername(username);
+        customer.setRequest(request);
         return request(customer);
     }
 
-    private Result searchHotelForDetails(SearchHotelDTO searchHotelDTO, Result searchHotelForPriceResult) {
-        List<String> fields = new ArrayList<>();
-        fields.add("description1");
-        fields.add("description2");
-        fields.add("hotelName");
-        fields.add("address");
-        fields.add("cityName");
-        fields.add("cityCode");
-        fields.add("countryName");
-        fields.add("countryCode");
-        fields.add("amenitie");
-        fields.add("leisure");
-        fields.add("business");
-        fields.add("rating");
-        fields.add("images");
-        fields.add("geoPoint");
+    @Cacheable(value = "hotelDetailsCache", key = "#searchHotelDTO.cityCode")
+    public Result searchHotelForDetails(SearchHotelDTO searchHotelDTO, Result searchHotelForPriceResult, String id, String username, String password) {
+        List<String> fieldList = new ArrayList<>();
+        fieldList.add("description1");
+        fieldList.add("description2");
+        fieldList.add("hotelName");
+        fieldList.add("address");
+        fieldList.add("cityName");
+        fieldList.add("cityCode");
+        fieldList.add("countryName");
+        fieldList.add("countryCode");
+        fieldList.add("amenitie");
+        fieldList.add("leisure");
+        fieldList.add("business");
+        fieldList.add("rating");
+        fieldList.add("images");
+        fieldList.add("geoPoint");
 
         List<String> hotelIds = new ArrayList<>();
         for (int i = 0; i < searchHotelForPriceResult.getHotels().size(); i++) {
-            hotelIds.add(searchHotelForPriceResult.getHotels().get(i).get_hotelid());
+            hotelIds.add(searchHotelForPriceResult.getHotels().get(i).getHotelid());
         }
 
-        Condition condition = Condition.builder()
-                .__prefix("a")
-                .fieldName("hotelId")
-                .fieldTest("in")
-                .fieldValues(FieldValues.builder().fieldValue(hotelIds).build())
-                .build();
+        FieldValues fieldValues = new FieldValues();
+        fieldValues.setFieldValue(hotelIds);
 
-        Customer customer = Customer.builder()
-                .request(Request.builder()
-                        .bookingDetails(prepareBookingDetails(searchHotelDTO))
-                        .returns(Return.builder()
-                                .filters(Filters.builder()
-                                        .city(searchHotelDTO.getCityCode())
-                                        .xmlnsa("http://us.dotwconnect.com/xsd/atomicCondition")
-                                        .xmlnsc("http://us.dotwconnect.com/xsd/complexCondition")
-                                        .noPrice("true")
-                                        .condition(Condition.builder()
-                                                .__prefix("c")
-                                                .condition(condition).build())
-                                        .build())
-                                .fields(Fields.builder()
-                                        .field(fields)
-                                        .build())
-                                .build())
-                        ._command(searchHotelCommand)
-                        .build())
-                .build();
+        ConditionA conditionA = new ConditionA();
+        conditionA.setFieldValues(fieldValues);
+        conditionA.setFieldTest("in");
+        conditionA.setFieldName("hotelId");
 
+        ConditionC conditionC = new ConditionC();
+        conditionC.setConditionA(conditionA);
+
+        Fields fields = new Fields();
+        fields.setField(fieldList);
+
+        Filters filters = new Filters();
+        filters.setCity(searchHotelDTO.getCityCode());
+        filters.setXmlnsa("http://us.dotwconnect.com/xsd/atomicCondition");
+        filters.setXmlnsc("http://us.dotwconnect.com/xsd/complexCondition");
+        filters.setNoPrice("true");
+        filters.setConditionC(conditionC);
+
+        Return aReturn = new Return();
+        aReturn.setFilters(filters);
+        aReturn.setFields(fields);
+
+        Request request = new Request();
+        request.set_command(searchHotelCommand);
+        request.setBookingDetails(prepareBookingDetails(searchHotelDTO));
+        request.setReturns(aReturn);
+
+        Customer customer = new Customer();
+        customer.setId(id);
+        customer.setPassword(password);
+        customer.setProduct(product);
+        customer.setSource(source);
+        customer.setUsername(username);
+        customer.setRequest(request);
         return request(customer);
     }
 
@@ -184,8 +209,10 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
             xml = writer.toString();
 
         } catch (JAXBException e) {
+            e.printStackTrace();
             Logger.getLogger(GOTWClientServiceImpl.class.getName()).log(Level.SEVERE, null, e);
         }
+        xml = xml.replaceAll("\\<\\?xml(.+?)\\?\\>", "").trim();
         return xml;
     }
 
@@ -194,7 +221,7 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(Result.class);
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-            StringReader reader = new StringReader(responseBody);
+            StringReader reader = new StringReader(responseBody.replaceAll("\\<\\?xml(.+?)\\?\\>", "").trim());
             result = (Result) jaxbUnmarshaller.unmarshal(reader);
         } catch (JAXBException ex) {
             Logger.getLogger(GOTWClientServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -204,11 +231,9 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
 
     private Result request(Customer customer) {
         try {
-            Optional<Setting> optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.GOTW_HOST_URL);
-
+            Optional<Setting> optionalSetting = settingRepository.findFirstByNameEquals(ProjectConstant.DOTW_HOST_URL);
             HttpClient client = HttpClientBuilder.create().build();
             HttpPost post = new HttpPost(optionalSetting.get().getValue());
-            System.out.println("Customer " + customer.toString());
             // add header
             post.setHeader("Accept-Encoding", "application/gzip");
             post.setHeader("Content-Type", "text/xml");
@@ -217,7 +242,6 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
             org.apache.http.HttpResponse response = client.execute(post);
             BufferedReader rd = new BufferedReader(
                     new InputStreamReader(response.getEntity().getContent()));
-
             StringBuilder result = new StringBuilder();
             String line;
             while ((line = rd.readLine()) != null) {
@@ -231,39 +255,36 @@ public class GOTWClientServiceImpl<T> implements GOTWClientService {
     }
 
     private BookingDetails prepareBookingDetails(SearchHotelDTO searchHotelDTO) {
-        List<Room> rooms = new ArrayList<>();
+        List<Room> roomList = new ArrayList<>();
         for (int i = 0; i < searchHotelDTO.getRoomDetailList().size(); i++) {
             RoomDTO roomDTO = searchHotelDTO.getRoomDetailList().get(i);
             List<Child> childList = new ArrayList<>();
-            for (Integer childDTO : roomDTO.getChildrenAgeList()) {
-                Child child = Child.builder()
-                        .__text(childDTO.toString())
-                        ._runno(String.valueOf(i + 1))
-                        .build();
+            for (int j = 0; j < roomDTO.getChildrenAgeList().size(); j++) {
+                Child child = new Child();
+                child.setChild(roomDTO.getChildrenAgeList().get(j).toString());
+                child.set_runno(String.valueOf(j));
                 childList.add(child);
             }
-            Children children = Children.builder()
-                    ._no(String.valueOf(roomDTO.getNumberOfChildren()))
-                    .child(childList)
-                    .build();
-            Room room = Room
-                    .builder()
-                    ._runno(String.valueOf(i + 1))
-                    .adultsCode(String.valueOf(roomDTO.getNumberOfAdults()))
-                    .children(children)
-                    .rateBasis("-1")
-                    .build();
-            rooms.add(room);
-        }
+            Children children = new Children();
+            children.set_no(String.valueOf(roomDTO.getNumberOfChildren()));
+            children.setChild(childList);
 
-        BookingDetails bookingDetails = BookingDetails.builder()
-                .fromDate(searchHotelDTO.getCheckInDate())
-                .toDate(searchHotelDTO.getCheckOutDate())
-                .rooms(Rooms.builder()
-                        ._no(String.valueOf(searchHotelDTO.getNumberOfRooms()))
-                        .room(rooms)
-                        .build())
-                .build();
+            Room room = new Room();
+            room.set_runno(String.valueOf(i));
+            room.setAdultsCode(String.valueOf(roomDTO.getNumberOfAdults()));
+            room.setChildren(children);
+            room.setRateBasis("-1");
+            roomList.add(room);
+        }
+        Rooms rooms = new Rooms();
+        rooms.set_no(String.valueOf(searchHotelDTO.getNumberOfRooms()));
+        rooms.setRoom(roomList);
+
+        BookingDetails bookingDetails = new BookingDetails();
+        bookingDetails.setFromDate(searchHotelDTO.getCheckInDate());
+        bookingDetails.setCurrency(currency);
+        bookingDetails.setRooms(rooms);
+        bookingDetails.setToDate(searchHotelDTO.getCheckOutDate());
 
         return bookingDetails;
     }

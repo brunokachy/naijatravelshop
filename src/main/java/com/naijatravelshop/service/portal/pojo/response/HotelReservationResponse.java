@@ -1,7 +1,8 @@
 package com.naijatravelshop.service.portal.pojo.response;
 
-import com.naijatravelshop.service.flight.pojo.request.FlightSegmentsDTO;
 import com.naijatravelshop.service.flight.pojo.request.TravellerDTO;
+import com.naijatravelshop.service.hotel.pojo.request.RoomDTO;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,25 +11,31 @@ import java.util.List;
 
 /**
  * Created by Bruno on
- * 23/06/2019
+ * 10/09/2019
  */
-@Setter
+@Builder
 @Getter
-public class FlightReservationResponse {
+@Setter
+public class HotelReservationResponse {
     private String bookingNumber;
     private Long sellingPrice;
     private String reservationStatus;
     private Date dateProcessed;
     private TravellerDTO reservationOwner;
-
     private Date bookingDate;
+
     private Integer numberOfAdult = 1;
     private Integer numberOfChildren = 0;
-    private Integer numberOfInfant = 0;
-    private Boolean visaServiceRequested = false;
-    private Boolean hotelServiceRequested = false;
-
-    private List<TravellerDTO> travellers;
+    private Integer numberOfRooms;
+    private Integer nights;
+    private String roomType;
+    private String hotelName;
+    private String hotelDescription;
+    private String hotelId;
+    private String cityName;
+    private String countryName;
+    private Date checkInDate;
+    private Date checkOutDate;
 
     private String paymentReference;
     private String paymentStatus;
@@ -36,6 +43,7 @@ public class FlightReservationResponse {
     private String transactionId;
     private String paymentChannel;
 
-    List<FlightSegmentsDTO> flightRoutes;
-
+    private Boolean visaServiceRequested = false;
+    private Boolean hotelServiceRequested = false;
+    private List<RoomDTO> rooms;
 }

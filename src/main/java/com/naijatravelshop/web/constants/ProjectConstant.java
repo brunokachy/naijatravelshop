@@ -22,10 +22,12 @@ public class ProjectConstant {
     public static final String AFFILIATE_SECRET_KEY = "AFFILIATE SECRET KEY";
     public static final String AFFILIATE_CODE = "AFFILIATE CODE";
 
-    public static final String GOTW_HOST_URL = "GOTW_HOST_URL";
+    public static final String DOTW_HOST_URL = "DOTW HOST URL";
+    public static final String DOTW_CUSTOMER_NAME = "DOTW CUSTOMER NAME";
+    public static final String DOTW_LOGIN_ID = "DOTW LOGIN ID";
+    public static final String DOTW_LOGIN_PASSWORD = "DOTW LOGIN PASSWORD";
+    public static final String DOTW_COMPANY_CODE = "DOTW COMPANY CODE";
 
     public static final String CURRENCY_EXCHANGE_RATE = "CURRENCY EXCHANGE RATE";
-
-
 
 }

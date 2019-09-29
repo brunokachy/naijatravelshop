@@ -1,5 +1,7 @@
 package com.naijatravelshop.web.controllers.api;
 
+import com.naijatravelshop.service.flight.pojo.response.ReservationResponseDTO;
+import com.naijatravelshop.service.hotel.pojo.request.BookHotelDTO;
 import com.naijatravelshop.service.hotel.pojo.request.HotelCityDTO;
 import com.naijatravelshop.service.hotel.pojo.request.SearchHotelDTO;
 import com.naijatravelshop.service.hotel.pojo.response.HotelListReponse;
@@ -55,6 +57,18 @@ public class HotelController {
         ApiResponse<HotelListReponse> apiResponse = new ApiResponse<>();
         HotelListReponse responseDTO = hotelService.searchHotel(searchHotelDTO);
         apiResponse.setMessage("Hotel Search was successfully");
+        apiResponse.setData(responseDTO);
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Create Hotel Reservation")
+    @PostMapping(value = {"/create_reservation"}, produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<ReservationResponseDTO>> createReservation(@RequestBody BookHotelDTO bookHotelDTO) {
+        log.info("CREATE HOTEL RESERVATION: {}", bookHotelDTO.toString());
+        ApiResponse<ReservationResponseDTO> apiResponse = new ApiResponse<>();
+        ReservationResponseDTO responseDTO = hotelService.createReservation(bookHotelDTO);
+        apiResponse.setMessage("Hotel reservation creation was successful");
         apiResponse.setData(responseDTO);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
     }

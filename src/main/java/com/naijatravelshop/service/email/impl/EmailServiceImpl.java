@@ -2,6 +2,7 @@ package com.naijatravelshop.service.email.impl;
 
 import com.naijatravelshop.service.email.EmailService;
 import com.naijatravelshop.service.flight.service.impl.FlightServiceImpl;
+import com.sendgrid.SendGrid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,11 @@ public class EmailServiceImpl implements EmailService {
 
     private JavaMailSender mailSender;
 
+    private SendGrid sendGridClient;
+
     @Autowired
-    public void setMailSender(JavaMailSender mailSender) {
+    public void setMailSender(JavaMailSender mailSender)
+    {
         this.mailSender = mailSender;
     }
 
@@ -84,5 +88,10 @@ public class EmailServiceImpl implements EmailService {
             log.error(ex.getMessage());
             ex.printStackTrace();
         }
+    }
+
+    @Override
+    public void sendHTMLSendGrid(String from, String to, String subject, String body) {
+
     }
 }

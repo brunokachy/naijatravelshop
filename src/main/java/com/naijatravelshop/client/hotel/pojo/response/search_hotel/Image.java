@@ -1,21 +1,23 @@
 package com.naijatravelshop.client.hotel.pojo.response.search_hotel;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Created by Bruno on
  * 15/08/2019
  */
-@Getter
-@Setter
-@ToString
-@Builder
+@Data
+@XmlRootElement(name = "image")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Image {
     private String alt;
-    private Category category;
-    private Url url;
-    private String _runno;
+    private String category;
+    private String url;
+    @XmlAttribute(name = "runno")
+    private String runno;
 }

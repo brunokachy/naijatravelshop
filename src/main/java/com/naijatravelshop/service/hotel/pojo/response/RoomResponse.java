@@ -13,9 +13,15 @@ import lombok.ToString;
 @Setter
 @ToString
 @Builder
-public class RoomResponse {
+public class RoomResponse implements Comparable<RoomResponse> {
 
     private Double roomPrice;
 
     private String name;
+
+    @Override
+    public int compareTo(RoomResponse roomResponse) {
+        return (this.roomPrice < roomResponse.roomPrice ? -1 :
+                (this.roomPrice == roomResponse.roomPrice ? 0 : 1));
+    }
 }

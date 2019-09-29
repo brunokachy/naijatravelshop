@@ -1,10 +1,12 @@
 package com.naijatravelshop.service.hotel.pojo.request;
 
+import com.naijatravelshop.service.flight.pojo.request.TravellerDTO;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -15,15 +17,11 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class RoomDTO {
-    //private String adultsCode;
-
-    // private String roomNumber;
-
-    // private List<ChildDTO> children;
-
+public class RoomDTO implements Serializable {
     private Integer numberOfAdults;
     private Integer numberOfChildren;
     private List<Integer> adultsAgeList;
     private List<Integer> childrenAgeList;
+    private List<TravellerDTO> adultList;
+    private List<TravellerDTO> childrenList;
 }

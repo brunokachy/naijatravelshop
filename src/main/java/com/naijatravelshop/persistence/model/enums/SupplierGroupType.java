@@ -2,7 +2,7 @@ package com.naijatravelshop.persistence.model.enums;
 
 public enum SupplierGroupType {
     AMADEUS("AMADEUS"),
-    JACTRAVEL("JACTRAVEL");
+    DOTW("DOTW");
 
     private final String value;
 
